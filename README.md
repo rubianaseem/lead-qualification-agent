@@ -43,3 +43,19 @@ the last 48h indicate active buying intent — recommend AE outreach within
 - Edit `ICP_PROFILE` in `lead_qualification_agent.py` to match your ideal customer profile
 - Swap `sample_leads.csv` for a live feed (HubSpot/Salesforce export, Clay enrichment output, or a webhook)
 - Routing tiers and thresholds are configurable at the top of the script
+
+## How this runs today (and what production would add)
+
+**Trigger:** none built in — this is a one-shot script you run manually (`python lead_qualification_agent.py --input ...`) or point a scheduler at (cron, n8n, Zapier). It doesn't listen for new leads on its own.
+
+**Action taken:** prints fit/intent scores, routing tier, and the brief to your terminal. It does **not** write anything back to HubSpot/Salesforce, and does not post to Slack — you'd see the recommendation here, but a human (or another automation step) still has to act on it.
+
+**Self-learning:** no. Scoring is hand-configured rules (`ICP_PROFILE`, routing thresholds) — there's no model training on outcomes or feedback loop. You tune the rules yourself as you learn what predicts pipeline.
+
+**Loop:** no persistent process — it reads the input once, scores every lead in it, prints, and exits.
+
+**What a production version would add:**
+- A scheduler (cron/n8n) or a webhook trigger fired when a new lead lands in HubSpot/Salesforce
+- A write-back step: update a custom "Lead Score" / "Routing Tier" property on the HubSpot contact or Salesforce lead via their API
+- A Slack notification for AE_OWNED leads via an incoming webhook
+- Optionally, logging routing decisions and outcomes somewhere queryable, so thresholds can be revisited based on what actually converted
