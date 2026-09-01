@@ -89,3 +89,18 @@ SUGGESTED WEIGHT ADJUSTMENTS (current -> suggested):
 ```
 
 Suggestions are printed for you to review — nothing gets applied to `lead_qualification_agent.py` automatically. Treat it as a periodic health-check on whether your scoring rules still match reality, not an autonomous system.
+
+## v2: persistent evidence brain
+
+The agent now keeps a `brain/<company>.json` (+ human-readable `.md`) file per lead. Every time you run it against a CSV, new signals are added to that lead's accumulated evidence — numbers add up, booleans stay true once true — rather than resetting on each run. That's what lets it make a genuine "gather evidence across the stack and make a call" verdict instead of scoring a single snapshot.
+
+```
+python lead_qualification_agent.py --input sample_leads.csv        # first pass
+python lead_qualification_agent.py --input sample_leads_day2.csv   # new evidence lands on the SAME lead
+python lead_qualification_agent.py --show "Acme Robotics"          # full accumulated brain file
+python lead_qualification_agent.py --history "Acme Robotics"       # fit/intent trend over every run
+```
+
+`sample_leads_day2.csv` is included so you can see this for real: running it after `sample_leads.csv` moves Acme Robotics from SDR_ASSISTED to AE_OWNED as a demo request and trial-start land on top of its existing evidence — nothing is re-scored from scratch.
+
+The `brain/` directory is where this state lives; it's gitignored so your own runs start clean.
