@@ -8,6 +8,10 @@ AI-generated one-paragraph brief explaining why.
 
 Usage:
     python lead_qualification_agent.py --input sample_leads.csv
+    python lead_qualification_agent.py --source hubspot
+    python lead_qualification_agent.py --source salesforce
+
+See SETUP.md for how to connect HubSpot or Salesforce.
 """
 
 import argparse
@@ -54,6 +58,22 @@ class Lead:
     intent_score: int = field(default=0)
     routing_tier: str = field(default="")
     brief: str = field(default="")
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Lead":
+        return cls(
+            company=d["company"],
+            contact_name=d["contact_name"],
+            contact_title=d["contact_title"],
+            company_size=int(d["company_size"]),
+            industry=d["industry"],
+            source=d["source"],
+            pages_visited_7d=int(d["pages_visited_7d"]),
+            content_downloads=int(d["content_downloads"]),
+            trial_started=str(d["trial_started"]).strip().lower() == "true",
+            g2_comparison_visit=str(d["g2_comparison_visit"]).strip().lower() == "true",
+            demo_requested=str(d["demo_requested"]).strip().lower() == "true",
+        )
 
 
 def score_fit(lead: Lead) -> int:
@@ -136,39 +156,52 @@ def generate_brief(lead: Lead) -> str:
         return f"(Brief generation failed: {exc})"
 
 
-def load_leads(path: str) -> list[Lead]:
+def load_leads_from_csv(path: str) -> list[Lead]:
     leads = []
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            leads.append(
-                Lead(
-                    company=row["company"],
-                    contact_name=row["contact_name"],
-                    contact_title=row["contact_title"],
-                    company_size=int(row["company_size"]),
-                    industry=row["industry"],
-                    source=row["source"],
-                    pages_visited_7d=int(row["pages_visited_7d"]),
-                    content_downloads=int(row["content_downloads"]),
-                    trial_started=row["trial_started"].strip().lower() == "true",
-                    g2_comparison_visit=row["g2_comparison_visit"].strip().lower() == "true",
-                    demo_requested=row["demo_requested"].strip().lower() == "true",
-                )
-            )
+            leads.append(Lead.from_dict(row))
     return leads
+
+
+def load_leads(args) -> list[Lead]:
+    if args.source == "hubspot":
+        from crm_loaders import load_leads_from_hubspot
+
+        return [Lead.from_dict(d) for d in load_leads_from_hubspot()]
+
+    if args.source == "salesforce":
+        from crm_loaders import load_leads_from_salesforce
+
+        return [Lead.from_dict(d) for d in load_leads_from_salesforce()]
+
+    # default: csv
+    if not args.input:
+        print("--input is required when --source csv (the default) is used", file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(args.input):
+        print(f"Input file not found: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    return load_leads_from_csv(args.input)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Score and route inbound leads.")
-    parser.add_argument("--input", required=True, help="Path to a leads CSV file")
+    parser.add_argument("--input", help="Path to a leads CSV file (used when --source csv)")
+    parser.add_argument(
+        "--source",
+        choices=["csv", "hubspot", "salesforce"],
+        default="csv",
+        help="Where to pull leads from. Defaults to csv. See SETUP.md for hubspot/salesforce.",
+    )
     args = parser.parse_args()
 
-    if not os.path.exists(args.input):
-        print(f"Input file not found: {args.input}", file=sys.stderr)
-        sys.exit(1)
+    leads = load_leads(args)
 
-    leads = load_leads(args.input)
+    if not leads:
+        print("No leads found.")
+        return
 
     for lead in leads:
         lead.fit_score = score_fit(lead)
