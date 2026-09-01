@@ -1,0 +1,6 @@
+company,contact_name,contact_title,company_size,industry,source,pages_visited_7d,content_downloads,trial_started,g2_comparison_visit,demo_requested
+Acme Robotics,Jane Doe,VP Marketing,850,Manufacturing,Organic Search,6,2,False,True,True
+Nimbus Cloud Co,Sam Patel,Marketing Coordinator,40,SaaS,LinkedIn Ad,1,0,False,False,False
+Vertex Health,Priya Shah,Director of RevOps,1200,Healthcare,Referral,4,1,True,False,False
+Tiny Tools Ltd,Alex Kim,Founder,8,SaaS,Organic Search,2,0,False,False,False
+Solstice Energy,Maria Lopez,CMO,600,Energy,Content Syndication,9,3,False,True,True
