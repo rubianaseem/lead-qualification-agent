@@ -1,0 +1,7 @@
+company,pages_visited_7d,content_downloads,trial_started,g2_comparison_visit,demo_requested,outcome
+Acme Robotics,6,2,false,true,true,won
+Beta Cloud,5,1,false,true,false,won
+Gamma Systems,7,3,true,true,true,won
+Delta Retail,1,0,false,false,false,lost
+Epsilon Foods,2,0,true,false,false,lost
+Zeta Logistics,0,1,false,false,false,lost

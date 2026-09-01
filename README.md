@@ -59,3 +59,33 @@ the last 48h indicate active buying intent — recommend AE outreach within
 - A write-back step: update a custom "Lead Score" / "Routing Tier" property on the HubSpot contact or Salesforce lead via their API
 - A Slack notification for AE_OWNED leads via an incoming webhook
 - Optionally, logging routing decisions and outcomes somewhere queryable, so thresholds can be revisited based on what actually converted
+
+## Adaptive scoring (feedback loop, not "self-learning AI")
+
+To be precise about what this is: it's not a machine learning model that trains itself. It's a lightweight feedback loop — `adaptive_scoring.py` lets you log the real outcome of leads you scored (won/lost), then compares average signal values between the two groups to suggest which signals in the scoring logic actually predict conversion, and which don't.
+
+```bash
+# log outcomes as deals close
+python adaptive_scoring.py --record-outcome --company "Acme Robotics" \
+  --pages_visited_7d 6 --content_downloads 2 --trial_started false \
+  --g2_comparison_visit true --demo_requested true --outcome won
+
+# once you've logged a handful of both won and lost leads
+python adaptive_scoring.py --analyze
+```
+
+```
+ADAPTIVE SCORING ANALYSIS — 6 outcomes logged (3 won, 3 lost)
+
+Signal                   Avg (Won)     Avg (Lost)    Lift
+pages_visited_7d         6.00          1.00          +500%
+content_downloads        2.00          0.33          +500%
+g2_comparison_visit      1.00          0.00          +inf%
+demo_requested           0.67          0.00          +inf%
+
+SUGGESTED WEIGHT ADJUSTMENTS (current -> suggested):
+  pages_visited_7d: 5 -> 6 (increase — strong predictor)
+  g2_comparison_visit: 20 -> 26 (increase — strong predictor)
+```
+
+Suggestions are printed for you to review — nothing gets applied to `lead_qualification_agent.py` automatically. Treat it as a periodic health-check on whether your scoring rules still match reality, not an autonomous system.
